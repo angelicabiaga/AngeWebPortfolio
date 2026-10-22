@@ -90,7 +90,7 @@ const EXPERIENCE = [
 ];
 
 const MARQUEE = ["ReactJS", "React Native", "JavaScript", "Figma", "Node.js", "REST API", "UI/UX Design", "Functional Testing", "Responsive Design"];
-const ROLES = ["Frontend Developer", "UI/UX Designer", "Software QA Tester"];
+const ROLES = ["Frontend Developer Intern", "App Dev Intern", "Software QA Tester", "Startup Tech Intern"];
 
 const store = {
   get(k) { try { return localStorage.getItem(k); } catch { return null; } },
@@ -490,13 +490,13 @@ export default function App() {
         <div className="wrap">
           <div className="hero-grid" ref={heroGridRef}>
             <div>
-              <span className="chip">Open to a frontend internship</span>
+              <span className="chip">Open to any IT roles</span>
               <h1>
                 <span><Split>Hi, I’m Angelica.</Split></span>
                 <em><span>{typed}</span><span className="caret" /></em>
               </h1>
               <p className="lead">
-                A BSIT student specializing in mobile and web applications. I build clean, responsive interfaces and connect them to real APIs.
+                A BSIT student who loves working and discovering new things in web and mobile development.
               </p>
               <div className="btns">
                 <a className="btn p" href="#projects">View my projects</a>
@@ -525,11 +525,11 @@ export default function App() {
             </div>
           </Reveal>
           <Reveal>
-            <h2><Split>The developer, the designer, the <em>problem solver</em></Split></h2>
+            <h2><Split>Always building, always <em>learning</em></Split></h2>
             <p>
-              I’m a detail-oriented Information Technology student at National University – MOA. Through academic, capstone, and freelance projects I’ve built web and mobile apps with ReactJS and React Native, improved layouts, and fixed bugs.
+              What I love most about this field is that I genuinely enjoy learning new things. Whenever someone teaches me a new tool or hands me a task I haven't done before, I find a way to have fun with it. That mindset makes it easy for me to pick things up quickly and help out wherever I'm needed.
             </p>
-            <p>I’m looking for a frontend internship where I can contribute to real projects and keep growing.</p>
+            <p> I’m looking for any IT role internship specifically Frontend Development where I can contribute to real projects and keep growing.</p>
           </Reveal>
         </div>
       </section>
