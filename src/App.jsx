@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, Children, cloneElement, isValidElement } from "react";
 import "./App.css";
 import photo from "/photo.jpg";
+import music from "/bg.mp4";
 
 /* ------------------------------------------------------------------ */
 /*  YOUR ASSETS — fill these in                                        */
@@ -13,7 +14,7 @@ const PHOTO_SRC = photo;
 
 // Your background music. Put the file in /public and use its path, e.g. "/music.mp3",
 // or import it like the photo above.
-const MUSIC_SRC = "";
+const MUSIC_SRC = music;
 
 /* Add each project's live website below to link its card directly. */
 const PROJECTS = [
