@@ -4,19 +4,14 @@ import photo from "/photo.jpg";
 import music from "/bg.mp4";
 
 /* ------------------------------------------------------------------ */
-/*  YOUR ASSETS — fill these in                                        */
+/*  YOUR ASSETS                                                        */
 /* ------------------------------------------------------------------ */
 
-// Your photo. Example:
-//   import portrait from "./assets/portrait.jpg";
-//   const PHOTO_SRC = portrait;
 const PHOTO_SRC = photo;
-
-// Your background music. Put the file in /public and use its path, e.g. "/music.mp3",
-// or import it like the photo above.
 const MUSIC_SRC = music;
 
-/* Add each project's live website below to link its card directly. */
+/* Paste each project's live website in the url field below.
+   Empty url = card is shown but not clickable. */
 const PROJECTS = [
   { id: "fs", art: "meadow", init: "Fs", title: "FranchiSync", role: "Capstone Project Manager & Frontend Developer", desc: "B2B web and mobile app for iFranchise, built with ReactJS and React Native.", url: "" },
   { id: "pt", art: "cream", init: "Pt", title: "AMSA Point Tracker", role: "Frontend Developer", desc: "Point tracker for the UPHSD Medicine organization using ReactJS and Google Apps Script.", url: "" },
@@ -134,7 +129,7 @@ function Reveal({ className = "", delay = 0, children }) {
           io.disconnect();
         }
       },
-      { threshold: 0.1 }
+      { threshold: 0, rootMargin: "0px 0px -6% 0px" }
     );
     io.observe(el);
     return () => io.disconnect();
@@ -261,12 +256,6 @@ const SpeakerOff = () => (
 export default function App() {
   const [loader, setLoader] = useState(true);
   const [typed, setTyped] = useState("");
-  const [urls, setUrls] = useState(() =>
-    Object.fromEntries(PROJECTS.map((p) => [p.id, p.url || store.get("url:" + p.id) || ""]))
-  );
-  const [pending, setPending] = useState(null);
-  const [dlgUrl, setDlgUrl] = useState("");
-  const [dlgNote, setDlgNote] = useState("Paste the address of this project. It opens in a new tab.");
   const [edge, setEdge] = useState({ start: true, end: false });
   const [dragging, setDragging] = useState(false);
   const [muted, setMuted] = useState(() => store.get("muted") === "1");
@@ -279,7 +268,6 @@ export default function App() {
   const heroGridRef = useRef(null);
   const photoRef = useRef(null);
   const trackRef = useRef(null);
-  const urlInputRef = useRef(null);
   const audioRef = useRef(null);
   const dragRef = useRef({ down: false, x: 0, sl: 0, moved: false });
 
@@ -384,32 +372,6 @@ export default function App() {
   };
   const onTrackClickCapture = (e) => {
     if (dragRef.current.moved) { e.preventDefault(); e.stopPropagation(); }
-  };
-
-  /* project link dialog */
-  useEffect(() => {
-    const onKey = (e) => { if (e.key === "Escape") closeDlg(); };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, []);
-  useEffect(() => { if (pending) urlInputRef.current?.focus(); }, [pending]);
-
-  const openDlg = (p) => {
-    setPending(p);
-    setDlgUrl("");
-    setDlgNote("Paste the address of this project. It opens in a new tab.");
-  };
-  const closeDlg = () => setPending(null);
-  const saveDlg = () => {
-    const v = dlgUrl.trim();
-    if (!/^https?:\/\//i.test(v)) {
-      setDlgNote("Enter a full address that starts with https://");
-      return;
-    }
-    store.set("url:" + pending.id, v);
-    setUrls((u) => ({ ...u, [pending.id]: v }));
-    closeDlg();
-    window.open(v, "_blank", "noopener");
   };
 
   /* music */
@@ -541,7 +503,7 @@ export default function App() {
             <small>Featured work</small>
             <h2><Split>Things I’ve <em>built</em></Split></h2>
           </Reveal>
-          <p className="hint">Swipe, drag or use the arrows to browse. Select a card to open the live website.</p>
+          <p className="hint">Swipe, drag or use the arrows to browse.</p>
         </div>
         <div
           className={"ptrack" + (dragging ? " drag" : "")}
@@ -554,7 +516,6 @@ export default function App() {
           onClickCapture={onTrackClickCapture}
         >
           {PROJECTS.map((p) => {
-            const url = urls[p.id];
             const inner = (
               <>
                 <div className={"art " + p.art}><span className="init">{p.init}</span></div>
@@ -562,14 +523,14 @@ export default function App() {
                   <h3>{p.title}</h3>
                   <div className="role">{p.role}</div>
                   <p>{p.desc}</p>
-                  <span className="go">{url ? "Visit website ↗" : "Add website link"}</span>
+                  {p.url && <span className="go">Visit website ↗</span>}
                 </div>
               </>
             );
-            return url ? (
-              <a key={p.id} className="proj" href={url} target="_blank" rel="noopener noreferrer" draggable={false}>{inner}</a>
+            return p.url ? (
+              <a key={p.id} className="proj" href={p.url} target="_blank" rel="noopener noreferrer" draggable={false}>{inner}</a>
             ) : (
-              <button key={p.id} className="proj nolink" type="button" onClick={() => openDlg(p)}>{inner}</button>
+              <div key={p.id} className="proj nolink">{inner}</div>
             );
           })}
         </div>
@@ -640,7 +601,6 @@ export default function App() {
           <div className="btns">
             <a className="btn p" href="mailto:angelicabiaga4224@gmail.com">Email me</a>
             <a className="btn o" href="https://www.linkedin.com/in/angelica-biaga-29b0b5401/" target="_blank" rel="noopener noreferrer">LinkedIn</a>
-            <a className="btn o" href="https://github.com/angelicabiaga" target="_blank" rel="noopener noreferrer">GitHub</a>
           </div>
         </Reveal>
       </section>
@@ -661,26 +621,6 @@ export default function App() {
           onChange={onVolume}
           aria-label="Music volume"
         />
-      </div>
-
-      <div id="dlg" className={pending ? "open" : ""} role="dialog" aria-modal="true" aria-labelledby="dt">
-        <div>
-          <h3 id="dt">{pending ? "Link for " + pending.title : "Add the website link"}</h3>
-          <p>{dlgNote}</p>
-          <input
-            ref={urlInputRef}
-            type="url"
-            placeholder="https://your-project.com"
-            aria-label="Project website address"
-            value={dlgUrl}
-            onChange={(e) => setDlgUrl(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter") saveDlg(); }}
-          />
-          <div className="row2">
-            <button className="btn o" type="button" onClick={closeDlg}>Cancel</button>
-            <button className="btn p" type="button" onClick={saveDlg}>Save and open</button>
-          </div>
-        </div>
       </div>
     </>
   );
