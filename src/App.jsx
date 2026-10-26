@@ -18,6 +18,8 @@ import resume from "/resume.pdf";
 
 const PHOTO_SRC = photo;
 const MUSIC_SRC = music;
+const EMAIL = "angelicabiaga4224@gmail.com";
+const LINKEDIN = "https://www.linkedin.com/in/angelica-biaga-29b0b5401/";
 
 /* Pictures, links and PDFs can be added from the editor (open the site with ?edit=1).
    You can also hardcode them here with img, url and pdf. */
@@ -25,7 +27,7 @@ const PROJECTS = [
   { id: "fs", art: "meadow", init: "Fs", title: "FranchiSync", role: "Capstone Project Manager & Frontend Developer", desc: "B2B web and mobile app for iFranchise, built with ReactJS and React Native.", img: pic1, url: "https://www.franchisync.business/" },
   { id: "pt", art: "cream", init: "Pt", title: "AMSA Point Tracker", role: "Frontend Developer", desc: "Point tracker for the UPHSD Medicine organization using ReactJS and Google Apps Script.", img: amsa1, pdf: pdf1 },
   { id: "wg", art: "sky", init: "Wg", title: "Digital Wedding Photo Album", role: "Freelance Web Developer", desc: "A wedding gallery that guests open by scanning an NFC tag.", img: wedding, url: "https://gina-sha-photos-h2uh.vercel.app/" },
-  { id: "wi", art: "sky", init: "Wi", title: "Coffee Shop Management System", role: "WebProg Project", desc: "A coffee shop management system built with ReactJS.", img: coffee, url: "https://coffee-spot-web.vercel.app/login" },
+  { id: "wi", art: "sky", init: "Wi", title: "Coffee Shop Management System", role: "WebProg Project", desc: "A coffee shop management system built with ReactJS.", img: coffee, url: "https://coffee-spot-web.vercel.app/" },
   { id: "pb", art: "cream", init: "Pb", title: "Digital Photobooth", role: "Freelance Web Developer", desc: "A photobooth website built with JavaScript and CSS.", img: solace, url: "https://solace-studios-photobooth-solace-st.vercel.app/index.html" },
   { id: "pm", art: "meadow", init: "Pm", title: "Publication Materials", role: "Publications Material Committee Member", desc: "Event posters, DP Blast, and photo templates for the Junior Philippine Computer Society.", img: PUBMAT, pdf: pdf2 },
 ];
@@ -98,9 +100,22 @@ const EXPERIENCE = [
 const MARQUEE = ["ReactJS", "React Native", "JavaScript", "Figma", "Node.js", "REST API", "UI/UX Design", "Functional Testing", "Responsive Design"];
 const ROLES = ["Looking for Internship", "App Dev Intern", "Software QA Tester", "Startup Tech Intern"];
 
+/* Bottom tab bar (phones) and top nav share these ids */
+const TABS = [
+  ["top", "Home", "M3 11 12 4l9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"],
+  ["projects", "Work", "M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z"],
+  ["skills", "Skills", "m8 8-4 4 4 4M16 8l4 4-4 4"],
+  ["experience", "Journey", "M4 8h16v11H4zM9 8V5h6v3"],
+  ["contact", "Contact", "M3 6h18v12H3zM3 7l9 7 9-7"],
+];
+
 const store = {
   get(k) { try { return localStorage.getItem(k); } catch { return null; } },
   set(k, v) { try { localStorage.setItem(k, v); return true; } catch { return false; } },
+};
+const session = {
+  get(k) { try { return sessionStorage.getItem(k); } catch { return null; } },
+  set(k, v) { try { sessionStorage.setItem(k, v); } catch { /* ignore */ } },
 };
 
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
@@ -260,7 +275,7 @@ function SkillBall() {
       return [Math.cos(th) * Math.sin(phi), Math.sin(th) * Math.sin(phi), Math.cos(phi)];
     });
 
-    let ax = -0.25, ay = 0, hover = false, drag = false, lx = 0, ly = 0, raf = 0;
+    let ax = -0.25, ay = 0, hover = false, drag = false, lx = 0, ly = 0, raf = 0, visible = true;
 
     const draw = () => {
       const R = (box.clientWidth / 2) * 0.84;
@@ -280,10 +295,16 @@ function SkillBall() {
     };
 
     const loop = () => {
-      if (!drag) ay += hover ? 0.0012 : 0.0045;
-      draw();
+      if (visible) {
+        if (!drag) ay += hover ? 0.0012 : 0.0045;
+        draw();
+      }
       raf = requestAnimationFrame(loop);
     };
+
+    // pause the animation when the ball is off screen (saves phone battery)
+    const io = new IntersectionObserver(([e]) => { visible = e.isIntersecting; });
+    io.observe(box);
 
     const down = (e) => { drag = true; lx = e.clientX; ly = e.clientY; box.setPointerCapture?.(e.pointerId); };
     const move = (e) => {
@@ -309,6 +330,7 @@ function SkillBall() {
 
     return () => {
       cancelAnimationFrame(raf);
+      io.disconnect();
       box.removeEventListener("pointerdown", down);
       box.removeEventListener("pointermove", move);
       box.removeEventListener("pointerup", up);
@@ -343,8 +365,10 @@ const SpeakerOff = () => (
 );
 
 export default function App() {
-  const [loader, setLoader] = useState(true);
+  const firstVisit = !session.get("seen");
+  const [loader, setLoader] = useState(firstVisit);
   const [typed, setTyped] = useState("");
+  const [active, setActive] = useState("top");
   const [edge, setEdge] = useState({ start: true, end: false });
   const [dragging, setDragging] = useState(false);
   const [muted, setMuted] = useState(() => store.get("muted") === "1");
@@ -479,16 +503,21 @@ export default function App() {
     setTimeout(() => setNote(""), 3000);
   };
 
-  /* loader + ready state */
+  /* loader runs once per visit, later page loads skip straight in */
   useEffect(() => {
-    const t1 = setTimeout(() => document.body.classList.add("ready"), 1500);
-    const t2 = setTimeout(() => setLoader(false), 3000);
+    if (!firstVisit) {
+      document.body.classList.add("ready");
+      return () => document.body.classList.remove("ready");
+    }
+    session.set("seen", "1");
+    const t1 = setTimeout(() => document.body.classList.add("ready"), 1300);
+    const t2 = setTimeout(() => setLoader(false), 2600);
     return () => {
       clearTimeout(t1);
       clearTimeout(t2);
       document.body.classList.remove("ready");
     };
-  }, []);
+  }, [firstVisit]);
 
   /* typing roles */
   useEffect(() => {
@@ -543,6 +572,17 @@ export default function App() {
     };
   }, []);
 
+  /* highlight the current section in the top nav and the tab bar */
+  useEffect(() => {
+    const els = TABS.map(([id]) => document.getElementById(id)).filter(Boolean);
+    const io = new IntersectionObserver(
+      (entries) => entries.forEach((e) => { if (e.isIntersecting) setActive(e.target.id); }),
+      { rootMargin: "-45% 0px -50% 0px" }
+    );
+    els.forEach((el) => io.observe(el));
+    return () => io.disconnect();
+  }, []);
+
   /* projects scroller edges */
   const updateEdge = () => {
     const t = trackRef.current;
@@ -592,11 +632,11 @@ export default function App() {
     store.set("muted", muted ? "1" : "0");
   }, [volume, muted]);
 
-  // browsers block autoplay, so start on the first click or key press anywhere on the page
+  // browsers block autoplay, so start on the first tap or key press anywhere on the page
   useEffect(() => {
     const a = audioRef.current;
     if (!a || !MUSIC_SRC) return;
-    const events = ["click", "keydown"];
+    const events = ["click", "keydown", "touchend"];
     const off = () => events.forEach((t) => window.removeEventListener(t, start));
     function start(e) {
       if (e.target?.closest?.(".music")) return;
@@ -640,18 +680,18 @@ export default function App() {
       )}
       <div id="bar" ref={barRef} />
 
-      <nav>
+      <nav className="topnav" aria-label="Main">
         <div className="wrap">
           <a href="#top" className="logo">Angelica<em>.</em></a>
           <div className="links">
             <a href="#about">About</a>
-            <a href="#projects">Projects</a>
-            <a href="#skills">Toolbox</a>
+            <a href="#projects" className={active === "projects" ? "on" : ""}>Projects</a>
+            <a href="#skills" className={active === "skills" ? "on" : ""}>Toolbox</a>
             <a href="#expertise">Expertise</a>
-            <a href="#experience">Experience</a>
-            <a href="#contact">Contact</a>
+            <a href="#experience" className={active === "experience" ? "on" : ""}>Experience</a>
+            <a href="#contact" className={active === "contact" ? "on" : ""}>Contact</a>
           </div>
-          <a className="btn p navcta" href="mailto:angelicabiaga4224@gmail.com">Contact me!</a>
+          <a className="btn p navcta" href={"mailto:" + EMAIL}>Contact me!</a>
         </div>
       </nav>
 
@@ -661,18 +701,18 @@ export default function App() {
         <div className="wrap">
           <div className="hero-grid" ref={heroGridRef}>
             <div>
-              <span className="chip">Open to any IT roles</span>
+              <span className="chip">Open to app dev internships</span>
               <h1>
                 <span><Split>Hi, I’m Angelica.</Split></span>
                 <em><span>{typed}</span><span className="caret" /></em>
               </h1>
               <p className="lead">
-                I’m looking for any IT role internship specifically in Application Development where I can contribute to real projects and keep growing.
+                I’m looking for an internship in Application Development where I can contribute to real projects and keep growing.
               </p>
               <div className="btns">
                 <a className="btn p" href="#projects">View my projects</a>
                 <a className="btn l" href="#experience">See experience</a>
-                <a className="btn o" href="resume.pdf">View Resume</a>
+                <a className="btn o" href={resume} target="_blank" rel="noopener noreferrer">View Resume</a>
               </div>
             </div>
             <SkillBall />
@@ -680,7 +720,7 @@ export default function App() {
         </div>
       </header>
 
-      <div className="mq">
+      <div className="mq" aria-hidden="true">
         <div>
           {marquee.map((w, i) => <span key={i}>{w} ✦</span>)}
         </div>
@@ -698,9 +738,8 @@ export default function App() {
           <Reveal>
             <h2><Split>Always building, always <em>learning</em></Split></h2>
             <p>
-            <A:mail></A:mail> BSIT student with experience in application development, UI/UX design, and project management through academic and freelance projects. Skilled in ReactJS, Canva, and passionate about building responsive, user-friendly web and mobile applications. A quick learner who values teamwork, problem-solving, and continuous improvement, with a strong interest in exploring new technologies and developing practical solutions that meet user needs.
+              BSIT student with experience in application development, UI/UX design, and project management through academic and freelance projects. Skilled in ReactJS, Canva, and passionate about building responsive, user-friendly web and mobile applications. A quick learner who values teamwork, problem-solving, and continuous improvement, with a strong interest in exploring new technologies and developing practical solutions that meet user needs.
             </p>
-            <p> </p>
           </Reveal>
         </div>
       </section>
@@ -708,10 +747,9 @@ export default function App() {
       <section id="projects">
         <div className="wrap">
           <Reveal className="head">
-            <small>Featured work</small>
-            <h2><Split>Things I’ve <em>built</em></Split></h2>
+            <small>EXPLORE MY WORKS</small>
+            <h2><Split>My <em>projects</em></Split></h2>
           </Reveal>
-          
         </div>
         <div
           className={"ptrack" + (dragging ? " drag" : "")}
@@ -723,49 +761,30 @@ export default function App() {
           onPointerLeave={endTrackDrag}
           onClickCapture={onTrackClickCapture}
         >
-          {projects.map((p) => {
-            const inner = (
-              <>
-                <div className={"art " + p.art}>
-                  {p.img ? (
-                    <img className="art-img" src={p.img} alt={p.title + " preview"} draggable={false} />
-                  ) : (
-                    <span className="init">{p.init}</span>
+          {projects.map((p) => (
+            <article key={p.id} className="proj">
+              <div className={"art " + p.art}>
+                {p.img ? (
+                  <img className="art-img" src={p.img} alt={p.title + " preview"} loading="lazy" draggable={false} />
+                ) : (
+                  <span className="init">{p.init}</span>
+                )}
+              </div>
+              <div className="ptext">
+                <h3>{p.title}</h3>
+                <div className="role">{p.role}</div>
+                <p>{p.desc}</p>
+                <div className="pactions">
+                  {p.url && (
+                    <a className="cbtn" href={p.url} target="_blank" rel="noopener noreferrer" draggable={false}>Visit website ↗</a>
+                  )}
+                  {p.hasPdf && (
+                    <button type="button" className="cbtn" onClick={() => openPdf(p)}>View work ↗</button>
                   )}
                 </div>
-                <div className="ptext">
-                  <h3>{p.title}</h3>
-                  <div className="role">{p.role}</div>
-                  <p>{p.desc}</p>
-                  <div className="pactions">
-                    {p.url && <span className="cbtn">Visit website ↗</span>}
-                    {p.hasPdf && (
-                      <span
-                        className="cbtn"
-                        role="button"
-                        tabIndex={0}
-                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); openPdf(p); }}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" || e.key === " ") {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            openPdf(p);
-                          }
-                        }}
-                      >
-                        View work ↗
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </>
-            );
-            return p.url ? (
-              <a key={p.id} className="proj" href={p.url} target="_blank" rel="noopener noreferrer" draggable={false}>{inner}</a>
-            ) : (
-              <div key={p.id} className="proj nolink">{inner}</div>
-            );
-          })}
+              </div>
+            </article>
+          ))}
         </div>
         <div className="pnav">
           <button type="button" aria-label="Previous projects" disabled={edge.start} onClick={() => slide(-1)}>←</button>
@@ -776,7 +795,7 @@ export default function App() {
           <div className="wrap">
             <div className="editor">
               <h3>Edit projects</h3>
-              <p className="hint">Add a picture, a website link and a PDF for each project, then click Save changes.</p>
+              <p className="hint ehint">Add a picture, a website link and a PDF for each project, then click Save changes.</p>
               {PROJECTS.map((p) => {
                 const d = draft[p.id] || {};
                 const pdf = draftPdf[p.id];
@@ -858,7 +877,7 @@ export default function App() {
             <small>Area of expertise</small>
             <h2><Split>What I <em>bring</em></Split></h2>
           </Reveal>
-          <p className="hint">Hover or tap a card to pop it.</p>
+          <p className="hint">Tap a card to see more.</p>
           <div className="grid">
             {EXPERT.map((e, i) => (
               <Reveal key={e[0]} delay={i * 90}>
@@ -890,15 +909,25 @@ export default function App() {
       <section id="contact" className="contact">
         <Reveal className="wrap">
           <h2><Split>Let’s build something <em>meaningful.</em></Split></h2>
-          <p>I’m open to a frontend internship where I can contribute to real projects and grow with a thoughtful team.</p>
+          <p>I’m open to an app development internship where I can contribute to real projects and grow with a thoughtful team.</p>
           <div className="btns">
-            <a className="btn p" href="mailto:angelicabiaga4224@gmail.com">Email me</a>
-            <a className="btn o" href="https://www.linkedin.com/in/angelica-biaga-29b0b5401/" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+            <a className="btn p" href={"mailto:" + EMAIL}>Email me</a>
+            <a className="btn o" href={LINKEDIN} target="_blank" rel="noopener noreferrer">LinkedIn</a>
+            <a className="btn o" href={resume} target="_blank" rel="noopener noreferrer">Resume</a>
           </div>
         </Reveal>
       </section>
 
       <footer>© 2026 Angelica V. Biaga. Las Piñas City.</footer>
+
+      <nav className="tabbar" aria-label="Sections">
+        {TABS.map(([id, label, d]) => (
+          <a key={id} href={"#" + id} className={active === id ? "on" : ""} aria-current={active === id ? "true" : undefined}>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d={d} /></svg>
+            {label}
+          </a>
+        ))}
+      </nav>
 
       <div className="music" role="group" aria-label="Background music">
         <audio ref={audioRef} src={MUSIC_SRC || undefined} loop preload="auto" />
