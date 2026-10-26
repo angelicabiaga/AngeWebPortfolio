@@ -698,7 +698,7 @@ export default function App() {
           <Reveal>
             <h2><Split>Always building, always <em>learning</em></Split></h2>
             <p>
-            <A:mail></A:mail> Motivated BSIT student with experience in application development, UI/UX design, and project management through academic and freelance projects. Skilled in ReactJS, Canva, and passionate about building responsive, user-friendly web and mobile applications. A quick learner who values teamwork, problem-solving, and continuous improvement, with a strong interest in exploring new technologies and developing practical solutions that meet user needs.
+            <A:mail></A:mail> BSIT student with experience in application development, UI/UX design, and project management through academic and freelance projects. Skilled in ReactJS, Canva, and passionate about building responsive, user-friendly web and mobile applications. A quick learner who values teamwork, problem-solving, and continuous improvement, with a strong interest in exploring new technologies and developing practical solutions that meet user needs.
             </p>
             <p> </p>
           </Reveal>
