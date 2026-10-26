@@ -651,7 +651,7 @@ export default function App() {
             <a href="#experience">Experience</a>
             <a href="#contact">Contact</a>
           </div>
-          <a className="btn p navcta" href="mailto:angelicabiaga4224@gmail.com">Hire me</a>
+          <a className="btn p navcta" href="mailto:angelicabiaga4224@gmail.com">Contact me!</a>
         </div>
       </nav>
 
@@ -667,12 +667,12 @@ export default function App() {
                 <em><span>{typed}</span><span className="caret" /></em>
               </h1>
               <p className="lead">
-                A BSIT student who loves working and discovering new things in web and mobile development.
+                I’m looking for any IT role internship specifically in Application Development where I can contribute to real projects and keep growing.
               </p>
               <div className="btns">
                 <a className="btn p" href="#projects">View my projects</a>
                 <a className="btn l" href="#experience">See experience</a>
-                <a className="btn o" href="resume.pdf">Resume</a>
+                <a className="btn o" href="resume.pdf">View Resume</a>
               </div>
             </div>
             <SkillBall />
@@ -698,9 +698,9 @@ export default function App() {
           <Reveal>
             <h2><Split>Always building, always <em>learning</em></Split></h2>
             <p>
-              What I love most about this field is that I genuinely enjoy learning new things. Whenever someone teaches me a new tool or hands me a task I haven't done before, I find a way to have fun with it. That mindset makes it easy for me to pick things up quickly and help out wherever I'm needed.
+            <A:mail></A:mail> Motivated BSIT student with experience in application development, UI/UX design, and project management through academic and freelance projects. Skilled in ReactJS, Canva, and passionate about building responsive, user-friendly web and mobile applications. A quick learner who values teamwork, problem-solving, and continuous improvement, with a strong interest in exploring new technologies and developing practical solutions that meet user needs.
             </p>
-            <p> I’m looking for any IT role internship specifically Frontend Development where I can contribute to real projects and keep growing.</p>
+            <p> </p>
           </Reveal>
         </div>
       </section>
@@ -711,7 +711,7 @@ export default function App() {
             <small>Featured work</small>
             <h2><Split>Things I’ve <em>built</em></Split></h2>
           </Reveal>
-          <p className="hint">Swipe, drag or use the arrows to browse.</p>
+          
         </div>
         <div
           className={"ptrack" + (dragging ? " drag" : "")}
