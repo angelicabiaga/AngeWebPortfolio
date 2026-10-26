@@ -2,6 +2,15 @@ import { useEffect, useRef, useState, Children, cloneElement, isValidElement } f
 import "./App.css";
 import photo from "/photo.jpg";
 import music from "/bg.mp4";
+import pic1 from "/1.png";
+import pdf1 from "/AMSA.pdf";
+import amsa1 from "/amsa1.png";
+import wedding from "/wedding.png";
+import coffee from "/coffee.png";
+import solace from "/solace.png";
+import PUBMAT from "/PUBMAT.png";
+import pdf2 from "/portfolio.pdf";
+import resume from "/resume.pdf";
 
 /* ------------------------------------------------------------------ */
 /*  YOUR ASSETS                                                        */
@@ -10,14 +19,15 @@ import music from "/bg.mp4";
 const PHOTO_SRC = photo;
 const MUSIC_SRC = music;
 
-/* Paste each project's live website in the url field below.
-   Empty url = card is shown but not clickable. */
+/* Pictures, links and PDFs can be added from the editor (open the site with ?edit=1).
+   You can also hardcode them here with img, url and pdf. */
 const PROJECTS = [
-  { id: "fs", art: "meadow", init: "Fs", title: "FranchiSync", role: "Capstone Project Manager & Frontend Developer", desc: "B2B web and mobile app for iFranchise, built with ReactJS and React Native.", url: "" },
-  { id: "pt", art: "cream", init: "Pt", title: "AMSA Point Tracker", role: "Frontend Developer", desc: "Point tracker for the UPHSD Medicine organization using ReactJS and Google Apps Script.", url: "" },
-  { id: "wg", art: "sky", init: "Wg", title: "Digital Wedding Photo Album", role: "Freelance Web Developer", desc: "A wedding gallery that guests open by scanning an NFC tag.", url: "" },
-  { id: "wi", art: "sky", init: "Wi", title: "Digital Wedding Invitation", role: "Freelance Web Developer", desc: "A personalized online invitation with the event details.", url: "" },
-  { id: "pb", art: "cream", init: "Pb", title: "Digital Photobooth", role: "Freelance Web Developer", desc: "A photobooth website built with JavaScript and CSS.", url: "" },
+  { id: "fs", art: "meadow", init: "Fs", title: "FranchiSync", role: "Capstone Project Manager & Frontend Developer", desc: "B2B web and mobile app for iFranchise, built with ReactJS and React Native.", img: pic1, url: "https://www.franchisync.business/" },
+  { id: "pt", art: "cream", init: "Pt", title: "AMSA Point Tracker", role: "Frontend Developer", desc: "Point tracker for the UPHSD Medicine organization using ReactJS and Google Apps Script.", img: amsa1, pdf: pdf1 },
+  { id: "wg", art: "sky", init: "Wg", title: "Digital Wedding Photo Album", role: "Freelance Web Developer", desc: "A wedding gallery that guests open by scanning an NFC tag.", img: wedding, url: "https://gina-sha-photos-h2uh.vercel.app/" },
+  { id: "wi", art: "sky", init: "Wi", title: "Coffee Shop Management System", role: "WebProg Project", desc: "A coffee shop management system built with ReactJS.", img: coffee, url: "https://coffee-spot-web.vercel.app/login" },
+  { id: "pb", art: "cream", init: "Pb", title: "Digital Photobooth", role: "Freelance Web Developer", desc: "A photobooth website built with JavaScript and CSS.", img: solace, url: "https://solace-studios-photobooth-solace-st.vercel.app/index.html" },
+  { id: "pm", art: "meadow", init: "Pm", title: "Publication Materials", role: "Publications Material Committee Member", desc: "Event posters, DP Blast, and photo templates for the Junior Philippine Computer Society.", img: PUBMAT, pdf: pdf2 },
 ];
 
 const EXPERT = [
@@ -86,14 +96,93 @@ const EXPERIENCE = [
 ];
 
 const MARQUEE = ["ReactJS", "React Native", "JavaScript", "Figma", "Node.js", "REST API", "UI/UX Design", "Functional Testing", "Responsive Design"];
-const ROLES = ["Frontend Developer Intern", "App Dev Intern", "Software QA Tester", "Startup Tech Intern"];
+const ROLES = ["Looking for Internship", "App Dev Intern", "Software QA Tester", "Startup Tech Intern"];
 
 const store = {
   get(k) { try { return localStorage.getItem(k); } catch { return null; } },
-  set(k, v) { try { localStorage.setItem(k, v); } catch { /* ignore */ } },
+  set(k, v) { try { localStorage.setItem(k, v); return true; } catch { return false; } },
 };
 
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+
+/* Load saved project pictures and links */
+const loadSaved = () => {
+  try { return JSON.parse(store.get("projects") || "{}") || {}; } catch { return {}; }
+};
+
+/* Editor starting values: saved value if any, otherwise what is hardcoded in PROJECTS */
+const initialDraft = () => {
+  const s = loadSaved();
+  const out = {};
+  PROJECTS.forEach((p) => {
+    const x = s[p.id] || {};
+    out[p.id] = { img: x.img || p.img || "", url: x.url || p.url || "" };
+  });
+  return out;
+};
+
+/* Tiny IndexedDB helper. PDFs are too big for localStorage, so they live here. */
+const DB_NAME = "portfolio";
+const DB_STORE = "pdfs";
+const MAX_PDF_MB = 25;
+
+const openDb = () =>
+  new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, 1);
+    req.onupgradeneeded = () => req.result.createObjectStore(DB_STORE);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+
+const idbGet = async (key) => {
+  const db = await openDb();
+  return new Promise((resolve, reject) => {
+    const q = db.transaction(DB_STORE).objectStore(DB_STORE).get(key);
+    q.onsuccess = () => resolve(q.result);
+    q.onerror = () => reject(q.error);
+  });
+};
+
+const idbSet = async (key, value) => {
+  const db = await openDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(DB_STORE, "readwrite");
+    tx.objectStore(DB_STORE).put(value, key);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+};
+
+const idbDel = async (key) => {
+  const db = await openDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(DB_STORE, "readwrite");
+    tx.objectStore(DB_STORE).delete(key);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+};
+
+/* Read a picture file and shrink it so it fits in browser storage */
+const fileToDataUrl = (file, maxW = 900) =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = reject;
+    reader.onload = () => {
+      const im = new Image();
+      im.onerror = reject;
+      im.onload = () => {
+        const scale = Math.min(1, maxW / im.width);
+        const c = document.createElement("canvas");
+        c.width = Math.round(im.width * scale);
+        c.height = Math.round(im.height * scale);
+        c.getContext("2d").drawImage(im, 0, 0, c.width, c.height);
+        resolve(c.toDataURL("image/jpeg", 0.8));
+      };
+      im.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
 
 /* Splits text into masked words for the slide-up reveal. Works with nested <em>. */
 function Split({ children }) {
@@ -264,12 +353,131 @@ export default function App() {
     return Number.isNaN(v) ? 0.5 : v;
   });
 
+  /* project pictures, links and PDFs (saved) + editor draft */
+  const editMode = new URLSearchParams(window.location.search).has("edit");
+  const [saved, setSaved] = useState(loadSaved);
+  const [draft, setDraft] = useState(initialDraft);
+  const [savedPdf, setSavedPdf] = useState({}); // id -> { name, blob }
+  const [draftPdf, setDraftPdf] = useState({});
+  const [note, setNote] = useState("");
+
   const barRef = useRef(null);
   const heroGridRef = useRef(null);
   const photoRef = useRef(null);
   const trackRef = useRef(null);
   const audioRef = useRef(null);
   const dragRef = useRef({ down: false, x: 0, sl: 0, moved: false });
+
+  /* saved values win, empty saved values fall back to what is hardcoded */
+  const projects = PROJECTS.map((p) => {
+    const s = saved[p.id] || {};
+    return {
+      ...p,
+      img: s.img || p.img || "",
+      url: s.url || p.url || "",
+      hasPdf: Boolean(savedPdf[p.id] || p.pdf),
+    };
+  });
+
+  /* load saved PDFs from IndexedDB */
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      const found = {};
+      for (const p of PROJECTS) {
+        try {
+          const v = await idbGet(p.id);
+          if (v && v.blob) found[p.id] = v;
+        } catch { /* ignore */ }
+      }
+      if (alive) {
+        setSavedPdf(found);
+        setDraftPdf(found);
+      }
+    })();
+    return () => { alive = false; };
+  }, []);
+
+  const setField = (id, field, value) =>
+    setDraft((d) => ({ ...d, [id]: { ...(d[id] || {}), [field]: value } }));
+
+  const pickImage = async (id, file) => {
+    if (!file) return;
+    try {
+      const data = await fileToDataUrl(file);
+      setField(id, "img", data);
+      setNote("");
+    } catch {
+      setNote("Could not read that picture. Try another file.");
+    }
+  };
+
+  const pickPdf = (id, file) => {
+    if (!file) return;
+    if (file.type !== "application/pdf") {
+      setNote("That is not a PDF file.");
+      return;
+    }
+    if (file.size > MAX_PDF_MB * 1024 * 1024) {
+      setNote("PDF is too big. Max is " + MAX_PDF_MB + " MB.");
+      return;
+    }
+    setDraftPdf((d) => ({ ...d, [id]: { name: file.name, blob: file } }));
+    setNote("");
+  };
+
+  const removePdf = (id) =>
+    setDraftPdf((d) => {
+      const next = { ...d };
+      delete next[id];
+      return next;
+    });
+
+  /* Opens the PDF in a new tab */
+  const openPdf = (p) => {
+    const s = savedPdf[p.id];
+    let href = "";
+    let temp = false;
+    if (s && s.blob) {
+      href = URL.createObjectURL(s.blob);
+      temp = true;
+    } else if (p.pdf) {
+      href = p.pdf;
+    }
+    if (!href) return;
+    const w = window.open(href, "_blank");
+    if (w) w.opener = null;
+    else window.location.href = href; // popup blocked, open in this tab instead
+    if (temp) setTimeout(() => URL.revokeObjectURL(href), 60000);
+  };
+
+  const saveChanges = async () => {
+    const clean = {};
+    PROJECTS.forEach((p) => {
+      const d = draft[p.id] || {};
+      clean[p.id] = { img: d.img || "", url: (d.url || "").trim() };
+    });
+    const okMain = store.set("projects", JSON.stringify(clean));
+
+    let okPdf = true;
+    try {
+      for (const p of PROJECTS) {
+        const d = draftPdf[p.id];
+        if (d) await idbSet(p.id, d);
+        else await idbDel(p.id);
+      }
+    } catch {
+      okPdf = false;
+    }
+
+    if (okMain) setSaved(clean);
+    if (okPdf) setSavedPdf(draftPdf);
+
+    if (okMain && okPdf) setNote("Saved!");
+    else if (!okMain) setNote("Not saved. Pictures are too big. Try smaller pictures.");
+    else setNote("Pictures saved, but the PDFs could not be saved.");
+    setTimeout(() => setNote(""), 3000);
+  };
 
   /* loader + ready state */
   useEffect(() => {
@@ -464,7 +672,7 @@ export default function App() {
               <div className="btns">
                 <a className="btn p" href="#projects">View my projects</a>
                 <a className="btn l" href="#experience">See experience</a>
-                <a className="btn o" href="#contact">Contact me</a>
+                <a className="btn o" href="resume.pdf">Resume</a>
               </div>
             </div>
             <SkillBall />
@@ -515,15 +723,40 @@ export default function App() {
           onPointerLeave={endTrackDrag}
           onClickCapture={onTrackClickCapture}
         >
-          {PROJECTS.map((p) => {
+          {projects.map((p) => {
             const inner = (
               <>
-                <div className={"art " + p.art}><span className="init">{p.init}</span></div>
+                <div className={"art " + p.art}>
+                  {p.img ? (
+                    <img className="art-img" src={p.img} alt={p.title + " preview"} draggable={false} />
+                  ) : (
+                    <span className="init">{p.init}</span>
+                  )}
+                </div>
                 <div className="ptext">
                   <h3>{p.title}</h3>
                   <div className="role">{p.role}</div>
                   <p>{p.desc}</p>
-                  {p.url && <span className="go">Visit website ↗</span>}
+                  <div className="pactions">
+                    {p.url && <span className="cbtn">Visit website ↗</span>}
+                    {p.hasPdf && (
+                      <span
+                        className="cbtn"
+                        role="button"
+                        tabIndex={0}
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); openPdf(p); }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            openPdf(p);
+                          }
+                        }}
+                      >
+                        View work ↗
+                      </span>
+                    )}
+                  </div>
                 </div>
               </>
             );
@@ -538,6 +771,66 @@ export default function App() {
           <button type="button" aria-label="Previous projects" disabled={edge.start} onClick={() => slide(-1)}>←</button>
           <button type="button" aria-label="Next projects" disabled={edge.end} onClick={() => slide(1)}>→</button>
         </div>
+
+        {editMode && (
+          <div className="wrap">
+            <div className="editor">
+              <h3>Edit projects</h3>
+              <p className="hint">Add a picture, a website link and a PDF for each project, then click Save changes.</p>
+              {PROJECTS.map((p) => {
+                const d = draft[p.id] || {};
+                const pdf = draftPdf[p.id];
+                return (
+                  <div className="erow" key={p.id}>
+                    <div className="ethumb">
+                      {d.img ? <img src={d.img} alt="" /> : <span>{p.init}</span>}
+                    </div>
+                    <div className="efields">
+                      <strong>{p.title}</strong>
+                      <input
+                        type="url"
+                        placeholder="https://your-website-link.com"
+                        value={d.url || ""}
+                        onChange={(e) => setField(p.id, "url", e.target.value)}
+                      />
+                      <div className="ebtns">
+                        <label className="ebtn">
+                          Choose picture
+                          <input type="file" accept="image/*" hidden onChange={(e) => pickImage(p.id, e.target.files[0])} />
+                        </label>
+                        {d.img && (
+                          <button type="button" className="ebtn" onClick={() => setField(p.id, "img", "")}>
+                            Remove picture
+                          </button>
+                        )}
+                        <label className="ebtn">
+                          Choose PDF
+                          <input
+                            type="file"
+                            accept="application/pdf"
+                            hidden
+                            onChange={(e) => { pickPdf(p.id, e.target.files[0]); e.target.value = ""; }}
+                          />
+                        </label>
+                        {pdf && (
+                          <button type="button" className="ebtn" onClick={() => removePdf(p.id)}>
+                            Remove PDF
+                          </button>
+                        )}
+                      </div>
+                      {pdf && <span className="epdf">PDF: {pdf.name}</span>}
+                      {!pdf && p.pdf && <span className="epdf">PDF: built-in file</span>}
+                    </div>
+                  </div>
+                );
+              })}
+              <div className="esave">
+                <button type="button" className="btn p" onClick={saveChanges}>Save changes</button>
+                {note && <span className="enote">{note}</span>}
+              </div>
+            </div>
+          </div>
+        )}
       </section>
 
       <section id="skills">
