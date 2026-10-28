@@ -27,7 +27,7 @@ const PROJECTS = [
   { id: "fs", art: "meadow", init: "Fs", title: "FranchiSync", role: "Capstone Project Manager & Frontend Developer", desc: "B2B web and mobile app for iFranchise, built with ReactJS and React Native.", img: pic1, url: "https://www.franchisync.business/" },
   { id: "pt", art: "cream", init: "Pt", title: "AMSA Point Tracker", role: "Frontend Developer", desc: "Point tracker for the UPHSD Medicine organization using ReactJS and Google Apps Script.", img: amsa1, pdf: pdf1 },
   { id: "wg", art: "sky", init: "Wg", title: "Digital Wedding Photo Album", role: "Freelance Web Developer", desc: "A wedding gallery that guests open by scanning an NFC tag.", img: wedding, url: "https://gina-sha-photos-h2uh.vercel.app/" },
-  { id: "wi", art: "sky", init: "Wi", title: "Coffee Shop Management System", role: "WebProg Project", desc: "A coffee shop management system built with ReactJS.", img: coffee, url: "https://coffee-spot-web.vercel.app/" },
+  { id: "wi", art: "sky", init: "Wi", title: "Coffee Shop Management System", role: "WebProg Project", desc: "A coffee shop management system built with ReactJS.", img: coffee, url: "https://coffee-spot-web.vercel.app/login" },
   { id: "pb", art: "cream", init: "Pb", title: "Digital Photobooth", role: "Freelance Web Developer", desc: "A photobooth website built with JavaScript and CSS.", img: solace, url: "https://solace-studios-photobooth-solace-st.vercel.app/index.html" },
   { id: "pm", art: "meadow", init: "Pm", title: "Publication Materials", role: "Publications Material Committee Member", desc: "Event posters, DP Blast, and photo templates for the Junior Philippine Computer Society.", img: PUBMAT, pdf: pdf2 },
 ];
@@ -199,7 +199,7 @@ const fileToDataUrl = (file, maxW = 900) =>
     reader.readAsDataURL(file);
   });
 
-/* Splits text into masked words for the slide-up reveal. Works with nested <em>. */
+/* Splits text into masked words for the slide-in reveal. Works with nested <em>. */
 function Split({ children }) {
   let n = 0;
   const walk = (node) =>
@@ -243,6 +243,36 @@ function Reveal({ className = "", delay = 0, children }) {
       {children}
     </div>
   );
+}
+
+/* Two panels that part left/right as the section scrolls into view.
+   Put it as the first child of a <section>. tone: "", "moss" or "bark". */
+function Curtain({ tone = "" }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    if (window.matchMedia("(prefers-reduced-motion:reduce)").matches) return;
+    const sec = el.parentElement;
+    let raf = 0;
+    const upd = () => {
+      raf = 0;
+      const r = sec.getBoundingClientRect(), vh = window.innerHeight;
+      const p = clamp((vh * 0.95 - r.top) / (vh * 0.6), 0, 1);
+      el.style.setProperty("--p", 1 - Math.pow(1 - p, 3));
+      el.style.visibility = p >= 1 ? "hidden" : "visible";
+    };
+    const on = () => { if (!raf) raf = requestAnimationFrame(upd); };
+    window.addEventListener("scroll", on, { passive: true });
+    window.addEventListener("resize", on);
+    upd();
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("scroll", on);
+      window.removeEventListener("resize", on);
+    };
+  }, []);
+  return <div className={"curtain " + tone} ref={ref} aria-hidden="true" />;
 }
 
 /* Card that pops (scales up) on hover/focus/tap and reveals its detail line. */
@@ -347,6 +377,32 @@ function SkillBall() {
       {BALL.map((w, i) => (
         <span className="tag" key={w} ref={(el) => (itemRefs.current[i] = el)}>{w}</span>
       ))}
+    </div>
+  );
+}
+
+/* Skills strip: scroll it with the arrows or swipe. No auto sliding. */
+function SkillStrip({ words }) {
+  const ref = useRef(null);
+  const [edge, setEdge] = useState({ start: true, end: false });
+  const update = () => {
+    const t = ref.current;
+    if (!t) return;
+    setEdge({ start: t.scrollLeft < 4, end: t.scrollLeft >= t.scrollWidth - t.clientWidth - 4 });
+  };
+  useEffect(() => {
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
+  const go = (dir) => ref.current.scrollBy({ left: dir * ref.current.clientWidth * 0.8, behavior: "smooth" });
+  return (
+    <div className="strip" role="group" aria-label="Skills">
+      <button type="button" aria-label="Previous skills" disabled={edge.start} onClick={() => go(-1)}>←</button>
+      <div className="strip-track" ref={ref} onScroll={update}>
+        {words.map((w) => <span key={w}>{w}</span>)}
+      </div>
+      <button type="button" aria-label="Next skills" disabled={edge.end} onClick={() => go(1)}>→</button>
     </div>
   );
 }
@@ -539,7 +595,7 @@ export default function App() {
     return () => clearTimeout(timer);
   }, []);
 
-  /* scroll effects: progress bar, hero fade, photo tilt */
+  /* scroll effects: progress bar, hero split, photo tilt */
   useEffect(() => {
     const calm = window.matchMedia("(prefers-reduced-motion:reduce)").matches;
     const bar = barRef.current, hg = heroGridRef.current, ph = photoRef.current;
@@ -549,8 +605,11 @@ export default function App() {
       bar.style.width = (y / (h.scrollHeight - vh || 1)) * 100 + "%";
       if (calm) return;
       const p = clamp(y / vh, 0, 1);
+      // hero splits: text slides left, skills ball slides right
+      const [L, R] = hg.children;
       hg.style.opacity = 1 - p * 1.1;
-      hg.style.transform = `translateY(${-p * 70}px) scale(${1 - p * 0.05})`;
+      L.style.transform = `translateX(${-p * 140}px)`;
+      R.style.transform = `translateX(${p * 140}px) rotate(${p * 8}deg)`;
       const r = ph.getBoundingClientRect();
       const t = clamp((vh - r.top) / (vh * 0.8), 0, 1);
       ph.style.transform = `rotate(${-10 + 7.5 * t}deg) scale(${0.88 + 0.12 * t})`;
@@ -669,8 +728,6 @@ export default function App() {
   };
   const silent = muted || volume === 0;
 
-  const marquee = [...MARQUEE, ...MARQUEE];
-
   return (
     <>
       {loader && (
@@ -720,11 +777,7 @@ export default function App() {
         </div>
       </header>
 
-      <div className="mq" aria-hidden="true">
-        <div>
-          {marquee.map((w, i) => <span key={i}>{w} ✦</span>)}
-        </div>
-      </div>
+      <SkillStrip words={MARQUEE} />
 
       <section id="about" className="about">
         <div className="wrap">
@@ -745,9 +798,10 @@ export default function App() {
       </section>
 
       <section id="projects">
+        <Curtain />
         <div className="wrap">
           <Reveal className="head">
-            <small>EXPLORE MY WORKS</small>
+            <small>Explore works</small>
             <h2><Split>My <em>projects</em></Split></h2>
           </Reveal>
         </div>
@@ -853,6 +907,7 @@ export default function App() {
       </section>
 
       <section id="skills">
+        <Curtain tone="moss" />
         <div className="wrap">
           <Reveal className="head">
             <small>Technical skills</small>
@@ -872,6 +927,7 @@ export default function App() {
       </section>
 
       <section id="expertise">
+        <Curtain tone="bark" />
         <div className="wrap">
           <Reveal className="head">
             <small>Area of expertise</small>
@@ -889,6 +945,7 @@ export default function App() {
       </section>
 
       <section id="experience">
+        <Curtain />
         <div className="wrap">
           <Reveal className="head">
             <small>Experience &amp; leadership</small>
@@ -907,6 +964,7 @@ export default function App() {
       </section>
 
       <section id="contact" className="contact">
+        <Curtain tone="moss" />
         <Reveal className="wrap">
           <h2><Split>Let’s build something <em>meaningful.</em></Split></h2>
           <p>I’m open to an app development internship where I can contribute to real projects and grow with a thoughtful team.</p>
